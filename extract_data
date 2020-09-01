@@ -3,7 +3,7 @@ import pandas as pd
 from pathlib import Path as Path
 
 main_dir = Path('C:/Users/dell/Desktop/Project-1/data')
-file_index = ['example - Sheet1.csv', 'example - Sheet1.csv', 'example - Sheet1.csv', 'example - Sheet1.csv']
+file_index = ['example.csv', 'example.csv', 'example.csv', 'example.csv']
 # file_path = main_dir/file_index[1]
 
 def extract_data(main_dir, file_index):
@@ -20,5 +20,5 @@ def extract_data(main_dir, file_index):
     return df
 if __name__ == "__main__":
     data = extract_data(main_dir, file_index)
-    # print(data)
+    print(data)
     data.to_csv('data.csv')
