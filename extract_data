@@ -21,4 +21,4 @@ def extract_data(main_dir, file_index):
 if __name__ == "__main__":
     data = extract_data(main_dir, file_index)
     print(data)
-    data.to_csv('data.csv')
+    data.to_pickle('data.csv')
