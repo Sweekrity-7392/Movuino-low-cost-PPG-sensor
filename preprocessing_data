@@ -1,92 +1,84 @@
 import numpy as np
 import matplotlib.pylab as plt
-from scipy.signal import find_peaks
 import pandas as pd
-from datetime import datetime
+from sklearn import preprocessing
+from pandas.plotting import register_matplotlib_converters
 
-def plotTimeSeries(data, key:list):
-    fig = plt.figure(figsize=[30, 15])
-    gs = fig.add_gridspec(3, 1)
-    ax1 = fig.add_subplot(gs[0, 0])
-    ax2 = fig.add_subplot(gs[1, 0])
-    ax3 = fig.add_subplot(gs[2, 0])
-    ax1.plot(data.Movuino[1:],'r')
-    # ax2.plot(data.key[:0], data.key[:2], 'c')
-    # ax3.plot(data.key[:0], data.key[:3], 'g')
-# #plotting filtered data
-# plt.plot(I[2])
-# plt.show()
-# plt.plot(I[3])
-# plt.show()
-# #plt.plot(I[2])
-# #plt.plot(I[3])
-# #plt.show()
-#
-# W = np.fft.fft(I[2])
-# W = abs(W)
-# V = W[1:]
-# #print(W)
-# #print(V)
-# plt.plot(V)
-# plt.show()
-#
-# X = np.fft.fft(I[3])
-# X = abs(W)
-# Y = X[1:]
-# #print(W)
-# #print(V)
-# plt.plot(Y)
-# plt.show()
-#
-# #plt.hist(H[2])
-# #plt.figure()
-# #plt.hist(H[3])
-#
-# h = np.array(H)
-# h = h.astype(int)
-# i = np.array(I)
-# i = i.astype(int)
-#
-# x = h[2][10:]
-# y = h[3][10:]
-# z = i[2][25:]
-# w = i[3][100:]
-#
-# peaks, properties = find_peaks(x[150:], threshold= 0,distance = 30, width = 10)
-# properties["widths"]
-# plt.plot(x[150:])
-# plt.plot(peaks, x[150:][peaks], "x")
-# plt.show()
-#
-# peaks, properties = find_peaks(y, distance = 30, width = 10)
-# properties["widths"]
-# plt.plot(y)
-# plt.plot(peaks, y[peaks], "x")
-# plt.show()
-#
-# peaks, properties = find_peaks(z, distance = 30, width = 10)
-# properties["widths"]
-# plt.plot(z)
-# plt.plot(peaks, z[peaks], "x")
-# plt.show()
-#
-# peaks, properties = find_peaks(w, distance = 30, width = 10)
-# properties["widths"]
-# plt.plot(w)
-# plt.plot(peaks, w[peaks], "x")
-# plt.show()
+register_matplotlib_converters()
+
+def plotTimeSeries(data, key:list, colorlist:list, label:str):
+    """ function to plot raw data from each channnel against time points
+    data: dataframe
+    key: list
+    """
+    for index in key:
+        fig = plt.figure(figsize=[10, 4])
+        gs = fig.add_gridspec(3, 1)
+        channel = data[index].columns[1:]
+        for c in range(len(channel)):
+            ax = fig.add_subplot(gs[c, 0])
+            ax.plot(data[index, 'timestamp'], data[index, channel[c]], color=colorlist[c])
+            ax.set_ylabel('%s \n %s' %(label,channel[c]))
+            ax.set_xticks([])
+        ax.set_xticks(data[index, 'timestamp'])
+        labels = ax.get_xticklabels()
+        # plt.setp(labels, rotation=45, horizontalalignment='right')
+        ax.set_xlabel('Time points (ms)')
+
+def scaleAndMeanShift(data, key:list, colorlist:list):
+    """ function to scale and center data such that mean = 0 and variance = 1
+    data: dataframe
+    key:list
+    """
+    for index in key:
+        data_scaled = data
+        data_scaled.to_pickle('scaled_data.pkl')
+        channel = data[index].columns[1:]
+        for c in range(len(channel)):
+            data_scaled[index, channel[c]] = preprocessing.scale(data[index, channel[c]])
+    plotTimeSeries(data_scaled,key,colorlist,"Normalized \n Data")
+    return data_scaled
+
+def removeBaseline(data,key,colorlist):
+    """ to correct for baseline """
+    # baseline_coeff_list = []
+    baseline_corrected_data = data
+    for index in key:
+        channel = data[index].columns[1:]
+        time_square = data.loc[:, (index, 'timestamp')] ** 2
+        # print(time_square)
+        cumulative_time_square = np.sum(time_square)
+        # print(cumulative_time_square)
+        # baseline_coeff_index = []
+        for c in range(len(channel)):
+            cumulative_time = 0
+            for t in range(len(time_square)):
+                cumulative_time = cumulative_time + (data.loc[t, (index, 'timestamp')] *
+                                                     data.loc[t, (index, channel[c])])
+            ratio = cumulative_time/cumulative_time_square
+            # baseline_coeff_index.append(ratio)
+
+            # baseline correction
+            baseline_corrected_data.loc[:, (index, channel[c])] = data.loc[:, (index, channel[c])] - (ratio * data.loc[:, (index, channel[c])])
+    plotTimeSeries(baseline_corrected_data, key, colorlist, "Baseline \n shifted \n Data")
+        # baseline_coeff_list.append(b)
 
 if __name__ == "__main__":
-    key = ['Movuino', 'PolarOH1', 'PolarH10', 'Maxim']
-    data = pd.read_csv('data.csv')
-    # print(data.Movuino[0:][1])
-    for i in range(1,len(data.Movuino[0:])):
-        data.Movuino[0:][i] = pd.Timestamp(int(data.Movuino[0:][i]), unit='ms')
-    for i in range(1,len(data.PolarOH1[0:])):
-        data.PolarOH1[0:][i] = pd.Timestamp(int(data.PolarOH1[0:][i]), unit='ms')
-    for i in range(1,len(data.PolarH10[0:])):
-        data.PolarH10[0:][i] = pd.Timestamp(int(data.PolarH10[0:][i]), unit='ms')
-    for i in range(1,len(data.Maxim[0:])):
-        data.Maxim[0:][i] = pd.Timestamp(int(data.Maxim[0:][i]), unit='ms')
-    plotTimeSeries(data,key)
+    # key = ['Movuino', 'PolarOH1', 'PolarH10', 'Maxim']
+    key = ['Movuino']
+    colorlist = ['r', 'c', 'g']
+    data = pd.read_pickle('data.pkl')
+    # print(data.loc[:, ('Movuino','timestamp')])
+    # print(data.loc[1, (key[0], 'timestamp')])
+    for index in key:
+        initial = data.loc[0, (index, 'timestamp')]
+        for i in range(len(data.loc[:, (index, 'timestamp')])):
+            data.loc[i, (index, 'timestamp')] = data.loc[i, (index, 'timestamp')] - initial
+            # data.loc[i, (index, 'timestamp')] = pd.to_datetime(data.loc[i, (index, 'timestamp')], unit='ms')
+    plotTimeSeries(data, key, colorlist,"Raw Data")
+    data_scaled = scaleAndMeanShift(data, key, colorlist)
+    removeBaseline(data_scaled, key, colorlist)
     plt.show()
+    # print(data.loc[0, ('Movuino','timestamp')])
+    # print(data.Movuino.timestamp)
+
