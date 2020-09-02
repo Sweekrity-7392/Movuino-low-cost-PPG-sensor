@@ -61,7 +61,8 @@ def removeBaseline(data,key,colorlist):
             # baseline correction
             baseline_corrected_data.loc[:, (index, channel[c])] = data.loc[:, (index, channel[c])] - (ratio * data.loc[:, (index, channel[c])])
     plotTimeSeries(baseline_corrected_data, key, colorlist, "Baseline \n shifted \n Data")
-        # baseline_coeff_list.append(b)
+    baseline_corrected_data.to_pickle("baseline_corrected_data.pkl")
+    return baseline_corrected_data
 
 if __name__ == "__main__":
     # key = ['Movuino', 'PolarOH1', 'PolarH10', 'Maxim']
@@ -79,6 +80,4 @@ if __name__ == "__main__":
     data_scaled = scaleAndMeanShift(data, key, colorlist)
     removeBaseline(data_scaled, key, colorlist)
     plt.show()
-    # print(data.loc[0, ('Movuino','timestamp')])
-    # print(data.Movuino.timestamp)
 
