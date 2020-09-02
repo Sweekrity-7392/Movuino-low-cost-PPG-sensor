@@ -3,7 +3,7 @@ import matplotlib.pylab as plt
 import pandas as pd
 from sklearn import preprocessing
 from pandas.plotting import register_matplotlib_converters
-
+from scipy.signal import butter, filtfilt
 register_matplotlib_converters()
 
 def plotTimeSeries(data, key:list, colorlist:list, label:str):
@@ -30,8 +30,8 @@ def scaleAndMeanShift(data, key:list, colorlist:list):
     data: dataframe
     key:list
     """
+    data_scaled = data
     for index in key:
-        data_scaled = data
         data_scaled.to_pickle('scaled_data.pkl')
         channel = data[index].columns[1:]
         for c in range(len(channel)):
@@ -64,6 +64,24 @@ def removeBaseline(data,key,colorlist):
     baseline_corrected_data.to_pickle("baseline_corrected_data.pkl")
     return baseline_corrected_data
 
+#filtering high freq data
+def butter_lowpass(cutoff, fs, order):
+    nyq = 0.5 * fs
+    normal_cutoff = cutoff / nyq
+    c, a = butter(order, normal_cutoff, btype='low', analog=False)
+    return c, a
+
+def butter_lowpass_filter(data, cutoff, fs, order):
+    c, a = butter_lowpass(cutoff, fs, order=order)
+    filtered_data = data
+    for index in key:
+        channel = data[index].columns[1:]
+        for c in range(len(channel)):
+            filtered_data.loc[:, (index,channel[c])] = filtfilt(c, a, baseline_shifted.loc[:, (index,channel[c])])
+    filtered_data.to_pickle("filtered_Data.pkl")
+    plotTimeSeries(filtered_data, key, colorlist, "Filtered \n data")
+    return filtered_data
+
 if __name__ == "__main__":
     # key = ['Movuino', 'PolarOH1', 'PolarH10', 'Maxim']
     key = ['Movuino']
@@ -78,6 +96,12 @@ if __name__ == "__main__":
             # data.loc[i, (index, 'timestamp')] = pd.to_datetime(data.loc[i, (index, 'timestamp')], unit='ms')
     plotTimeSeries(data, key, colorlist,"Raw Data")
     data_scaled = scaleAndMeanShift(data, key, colorlist)
-    removeBaseline(data_scaled, key, colorlist)
+    baseline_shifted = removeBaseline(data_scaled, key, colorlist)
     plt.show()
 
+    #filtering
+    fs = 25
+    order = 2
+    cutoff = 4
+    filtered_data = butter_lowpass_filter(baseline_shifted, cutoff, fs, order)
+    plt.show()
