@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pylab as plt
 import pandas as pd
-# from sklearn import preprocessing
 from scipy.signal import butter, filtfilt
+from scipy.signal import find_peaks
 import scipy.fftpack
 
 def plotTimeSeries(data, key:list, colorlist:list, label:str):
@@ -23,6 +23,19 @@ def plotTimeSeries(data, key:list, colorlist:list, label:str):
         labels = ax.get_xticklabels()
         plt.setp(labels, rotation=45, horizontalalignment='right')
         ax.set_xlabel('Time points (ms)')
+
+def SamplingRate(data, key):
+    sampling_freq = []
+    for index in key:
+        channel = data[index].columns[1:]
+        fs = []
+        for c in range(len(channel)):
+            T = data.loc[len(data.loc[:, (index, 'timestamp')])-1, (index, 'timestamp')]
+            sample = len(data.loc[:, (index, channel[c])])
+            s = sample/T*1000
+            fs.append(s)
+        sampling_freq.append(fs)
+    return sampling_freq
 
 def signalToNoiseRation(data, key, colorlist):
     """
@@ -82,16 +95,29 @@ def butter_lowpass_filter(data, cutoff, fs, order):
     data = filtfilt(b, a, data)
     return data
 
+def Peak_detection(data, key, colorlist):
+    for index in range(len(key)):
+        fig = plt.figure(figsize=[10, 4])
+        gs = fig.add_gridspec(3, 1)
+        channel = data[key[index]].columns[1:]
+        for c in range(len(channel)):
+            ax = fig.add_subplot(gs[c, 0])
+            peaks, properties = find_peaks(data.loc[:, (key[index], channel[c])], distance=2)
+            ax.plot(data.loc[:, (key[index], channel[c])], colorlist[c])
+            ax1 = ax.twinx()
+            ax1.plot(peaks, data.loc[peaks, (key[index], channel[c])], "yx")
+            ax.set_ylabel("peaks \n search \n %s" %channel[c])
+        ax.set_xlabel("time (ms)")
+
 if __name__ == "__main__":
     # key = ['Movuino', 'PolarOH1', 'PolarH10', 'Maxim']
-    key = ['Movuino', 'PolarOH1']
+    key = ['Movuino']
     colorlist = ['r', 'c', 'g']
     data = pd.read_pickle('data.pkl')
     baseline_corrected = pd.read_pickle('baseline_corrected_data.pkl')
-    # signalToNoiseRation(data, key, colorlist)
-    # plt.show()
+    fs = SamplingRate(baseline_corrected, key)
+    print(fs)
     a, f, e, fft_data = signalToNoiseRation(baseline_corrected, key, colorlist)
-    plt.show()
 
     # Filter requirements.
     fs = 100  # sample rate, Hz
@@ -101,11 +127,15 @@ if __name__ == "__main__":
         channel = fft_data[key[index]].columns[1:]
         for c in range(len(channel)):
             cutoff = f[index][c][1]  # desired cutoff frequency of the filter, Hz, slightly higher than actual 2 Hz
-            # print(cutoff)
-            # Filter the data, and plot filtered signals.
             filtered_data.loc[:, (key[index],channel[c])] = butter_lowpass_filter(
                 fft_data.loc[:, (key[index],channel[c])], cutoff, fs, order)
     plotTimeSeries(filtered_data, key, colorlist, "filtered \n data")
-    plt.show()
+    # plt.show()
     filtered_data.to_pickle('filtered__Data.pkl')
+    # a_1, f_1, e_1, fft_data_1 = signalToNoiseRation(filtered_data, key, colorlist)
+    # plt.show()
+    #peak detection
+    Peak_detection(filtered_data, key, colorlist)
+    plt.show()
+
 

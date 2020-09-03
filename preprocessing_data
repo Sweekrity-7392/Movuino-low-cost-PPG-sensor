@@ -3,7 +3,6 @@ import matplotlib.pylab as plt
 import pandas as pd
 from sklearn import preprocessing
 from pandas.plotting import register_matplotlib_converters
-from scipy.signal import butter, filtfilt
 register_matplotlib_converters()
 
 def plotTimeSeries(data, key:list, colorlist:list, label:str):
