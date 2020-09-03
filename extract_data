@@ -20,5 +20,5 @@ def extract_data(main_dir, file_index):
     return df
 if __name__ == "__main__":
     data = extract_data(main_dir, file_index)
-    print(data)
+    # print(data)
     data.to_pickle('data.pkl')
