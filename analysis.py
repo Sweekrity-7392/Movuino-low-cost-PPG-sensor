@@ -96,18 +96,38 @@ def butter_lowpass_filter(data, cutoff, fs, order):
     return data
 
 def Peak_detection(data, key, colorlist):
+    Peaks = []
     for index in range(len(key)):
         fig = plt.figure(figsize=[10, 4])
         gs = fig.add_gridspec(3, 1)
         channel = data[key[index]].columns[1:]
+        peaks_per_channel = []
         for c in range(len(channel)):
             ax = fig.add_subplot(gs[c, 0])
             peaks, properties = find_peaks(data.loc[:, (key[index], channel[c])], distance=2)
+            peaks_per_channel.append(peaks)
             ax.plot(data.loc[:, (key[index], channel[c])], colorlist[c])
             ax1 = ax.twinx()
             ax1.plot(peaks, data.loc[peaks, (key[index], channel[c])], "yx")
             ax.set_ylabel("peaks \n search \n %s" %channel[c])
         ax.set_xlabel("time (ms)")
+        Peaks.append(peaks_per_channel)
+    return Peaks
+
+
+def HR_estimation(data, peaks):
+    BPM = []
+    for index in range(len(key)):
+        # fig = plt.figure(figsize=[10, 4])
+        # gs = fig.add_gridspec(3, 1)
+        channel = data[key[index]].columns[1:]
+        bpm_per_channel = []
+        for c in range(len(channel)):
+            T = np.abs(data.loc[len(data.loc[:, (key[index], 'timestamp')]) - 1, (key[index], 'timestamp')])
+            HR = (len(peaks[0][c]) / T) * 1000 * 60
+            bpm_per_channel.append(HR)
+        BPM.append(bpm_per_channel)
+    return BPM
 
 if __name__ == "__main__":
     # key = ['Movuino', 'PolarOH1', 'PolarH10', 'Maxim']
@@ -135,7 +155,9 @@ if __name__ == "__main__":
     # a_1, f_1, e_1, fft_data_1 = signalToNoiseRation(filtered_data, key, colorlist)
     # plt.show()
     #peak detection
-    Peak_detection(filtered_data, key, colorlist)
-    plt.show()
+    Peaks = Peak_detection(filtered_data, key, colorlist)
+    # plt.show()
+    hr = HR_estimation(filtered_data, Peaks)
+    print(hr)
 
 
