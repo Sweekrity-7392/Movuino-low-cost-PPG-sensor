@@ -87,10 +87,10 @@ if __name__ == "__main__":
     key = ['Movuino', 'PolarOH1']
     colorlist = ['r', 'c', 'g']
     data = pd.read_pickle('data.pkl')
-    filtered_data = pd.read_pickle('filtered_Data.pkl')
+    baseline_corrected = pd.read_pickle('baseline_corrected_data.pkl')
     # signalToNoiseRation(data, key, colorlist)
     # plt.show()
-    a, f, e, fft_data = signalToNoiseRation(filtered_data, key, colorlist)
+    a, f, e, fft_data = signalToNoiseRation(baseline_corrected, key, colorlist)
     plt.show()
 
     # Filter requirements.
@@ -106,6 +106,6 @@ if __name__ == "__main__":
             filtered_data.loc[:, (key[index],channel[c])] = butter_lowpass_filter(
                 fft_data.loc[:, (key[index],channel[c])], cutoff, fs, order)
     plotTimeSeries(filtered_data, key, colorlist, "filtered \n data")
-    # plt.show()
+    plt.show()
     filtered_data.to_pickle('filtered__Data.pkl')
 
