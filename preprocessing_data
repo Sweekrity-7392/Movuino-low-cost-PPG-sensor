@@ -22,7 +22,7 @@ def plotTimeSeries(data, key:list, colorlist:list, label:str):
             ax.set_xticks([])
         ax.set_xticks(data[index, 'timestamp'])
         labels = ax.get_xticklabels()
-        # plt.setp(labels, rotation=45, horizontalalignment='right')
+        plt.setp(labels, rotation=45, horizontalalignment='right')
         ax.set_xlabel('Time points (ms)')
 
 def scaleAndMeanShift(data, key:list, colorlist:list):
@@ -65,21 +65,19 @@ def removeBaseline(data,key,colorlist):
     return baseline_corrected_data
 
 #filtering high freq data
-def butter_lowpass(cutoff, fs, order):
+def butter_lowpass_filter(data, cutoff, fs, order, key, colorlist):
     nyq = 0.5 * fs
     normal_cutoff = cutoff / nyq
-    c, a = butter(order, normal_cutoff, btype='low', analog=False)
-    return c, a
-
-def butter_lowpass_filter(data, cutoff, fs, order):
-    c, a = butter_lowpass(cutoff, fs, order=order)
+    b, a = butter(order, normal_cutoff, btype='low', analog=False)
+    # print(c, a)
     filtered_data = data
     for index in key:
         channel = data[index].columns[1:]
         for c in range(len(channel)):
-            filtered_data.loc[:, (index,channel[c])] = filtfilt(c, a, baseline_shifted.loc[:, (index,channel[c])])
+            filtered_data.loc[:, (index, channel[c])] = filtfilt(b, a, data.loc[:, (index, channel[c])])
     filtered_data.to_pickle("filtered_Data.pkl")
     plotTimeSeries(filtered_data, key, colorlist, "Filtered \n data")
+    # print(filtered_data)
     return filtered_data
 
 if __name__ == "__main__":
@@ -93,15 +91,17 @@ if __name__ == "__main__":
         initial = data.loc[0, (index, 'timestamp')]
         for i in range(len(data.loc[:, (index, 'timestamp')])):
             data.loc[i, (index, 'timestamp')] = data.loc[i, (index, 'timestamp')] - initial
-            # data.loc[i, (index, 'timestamp')] = pd.to_datetime(data.loc[i, (index, 'timestamp')], unit='ms')
+            # data.loc[i, (index, 'timestamp')] = pd.to_datetime(data.loc[i, (index, 'timestamp')]0.5 unit='ms')
     plotTimeSeries(data, key, colorlist,"Raw Data")
     data_scaled = scaleAndMeanShift(data, key, colorlist)
     baseline_shifted = removeBaseline(data_scaled, key, colorlist)
-    plt.show()
+    # print(baseline_shifted.Movuino)
+    # plt.show()
 
     #filtering
     fs = 25
     order = 2
-    cutoff = 4
-    filtered_data = butter_lowpass_filter(baseline_shifted, cutoff, fs, order)
+    cutoff = 1
+    butter_lowpass_filter(baseline_shifted, cutoff, fs, order, key, colorlist)
+    # print(filtered_data.Movuino)
     plt.show()
