@@ -64,22 +64,6 @@ def removeBaseline(data,key,colorlist):
     baseline_corrected_data.to_pickle("baseline_corrected_data.pkl")
     return baseline_corrected_data
 
-# #filtering high freq data
-# def butter_lowpass_filter(data, cutoff, fs, order, key, colorlist):
-#     nyq = 0.5 * fs
-#     normal_cutoff = cutoff / nyq
-#     b, a = butter(order, normal_cutoff, btype='low', analog=False)
-#     # print(c, a)
-#     filtered_data = data
-#     for index in key:
-#         channel = data[index].columns[1:]
-#         for c in range(len(channel)):
-#             filtered_data.loc[:, (index, channel[c])] = filtfilt(b, a, data.loc[:, (index, channel[c])])
-#     filtered_data.to_pickle("filtered_Data.pkl")
-#     plotTimeSeries(filtered_data, key, colorlist, "Filtered \n data")
-#     # print(filtered_data)
-#     return filtered_data
-
 if __name__ == "__main__":
     # key = ['Movuino', 'PolarOH1', 'PolarH10', 'Maxim']
     key = ['Movuino',"PolarOH1"]
@@ -97,11 +81,3 @@ if __name__ == "__main__":
     baseline_shifted = removeBaseline(data_scaled, key, colorlist)
     # print(baseline_shifted.Movuino)
     plt.show()
-
-    # #filtering
-    # fs = 25
-    # order = 2
-    # cutoff = 1
-    # butter_lowpass_filter(baseline_shifted, cutoff, fs, order, key, colorlist)
-    # # print(filtered_data.Movuino)
-    # plt.show()
