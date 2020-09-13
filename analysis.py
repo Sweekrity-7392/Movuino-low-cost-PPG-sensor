@@ -16,6 +16,8 @@ def plotTimeSeries(data, key:list, colorlist:list, label:str):
         channel = data[index].columns[1:]
         for c in range(len(channel)):
             ax = fig.add_subplot(gs[c, 0])
+            data[index, 'timestamp'] = data[index, 'timestamp'].dropna()
+            data[index, channel[c]] = data[index, channel[c]].dropna()
             ax.plot(data[index, 'timestamp'], data[index, channel[c]], color=colorlist[c])
             ax.set_ylabel('%s \n %s' %(label,channel[c]))
             ax.set_xticks([])
@@ -30,9 +32,11 @@ def SamplingRate(data, key):
         channel = data[index].columns[1:]
         fs = []
         for c in range(len(channel)):
-            T = data.loc[len(data.loc[:, (index, 'timestamp')])-1, (index, 'timestamp')]
+            data.loc[:, (index, 'timestamp')] = data.loc[:, (index, 'timestamp')].dropna()
+            data.loc[:, (index, channel[c])] = data.loc[:, (index, channel[c])].dropna()
+            t = data.loc[len(data.loc[:, (index, 'timestamp')])-1, (index, 'timestamp')]
             sample = len(data.loc[:, (index, channel[c])])
-            s = sample/T*1000
+            s = sample/t*1000
             fs.append(s)
         sampling_freq.append(fs)
     return sampling_freq
@@ -55,6 +59,7 @@ def signalToNoiseRation(data, key, colorlist):
         sig_noise = []
         for c in range(len(channel)):
             ax = fig.add_subplot(gs[0, index])
+            data.loc[:, (key[index], channel[c])] = data.loc[:, (key[index], channel[c])].dropna()
             fft_Data.loc[:, (key[index], channel[c])] = scipy.fftpack.fft(data.loc[:, (key[index], channel[c])])
             s = np.array(fft_Data.loc[:, (key[index], channel[c])])
             sig_noise_amp = 2 / len(data.loc[:, (key[index], 'timestamp')]) * np.abs(fft_Data.loc[:,
@@ -104,6 +109,7 @@ def Peak_detection(data, key, colorlist):
         peaks_per_channel = []
         for c in range(len(channel)):
             ax = fig.add_subplot(gs[c, 0])
+            data.loc[:, (key[index], channel[c])] = data.loc[:, (key[index], channel[c])].dropna()
             peaks, properties = find_peaks(data.loc[:, (key[index], channel[c])], distance=2)
             peaks_per_channel.append(peaks)
             ax.plot(data.loc[:, (key[index], channel[c])], colorlist[c])
@@ -123,6 +129,7 @@ def HR_estimation(data, peaks):
         channel = data[key[index]].columns[1:]
         bpm_per_channel = []
         for c in range(len(channel)):
+            data.loc[:, (key[index],'timestamp')] = data.loc[:, (key[index],'timestamp')].dropna()
             T = np.abs(data.loc[len(data.loc[:, (key[index], 'timestamp')]) - 1, (key[index], 'timestamp')])
             HR = (len(peaks[0][c]) / T) * 1000 * 60
             bpm_per_channel.append(HR)
@@ -131,33 +138,33 @@ def HR_estimation(data, peaks):
 
 if __name__ == "__main__":
     # key = ['Movuino', 'PolarOH1', 'PolarH10', 'Maxim']
-    key = ['Movuino']
+    key = ['50Hz', '100Hz', '200Hz', 'polarH10', 'polarOH1']
     colorlist = ['r', 'c', 'g']
-    data = pd.read_pickle('data.pkl')
-    baseline_corrected = pd.read_pickle('baseline_corrected_data.pkl')
+    data = pd.read_pickle('samplerate_data.pkl')
+    baseline_corrected = pd.read_pickle('scaled_data.pkl')
     fs = SamplingRate(baseline_corrected, key)
     print(fs)
-    a, f, e, fft_data = signalToNoiseRation(baseline_corrected, key, colorlist)
-
-    # Filter requirements.
-    fs = 100  # sample rate, Hz
-    order = 1  # sin wave can be approx represented as quadratic
-    filtered_data = fft_data
-    for index in range(len(key)):
-        channel = fft_data[key[index]].columns[1:]
-        for c in range(len(channel)):
-            cutoff = f[index][c][1]  # desired cutoff frequency of the filter, Hz, slightly higher than actual 2 Hz
-            filtered_data.loc[:, (key[index],channel[c])] = butter_lowpass_filter(
-                fft_data.loc[:, (key[index],channel[c])], cutoff, fs, order)
-    plotTimeSeries(filtered_data, key, colorlist, "filtered \n data")
-    # plt.show()
-    filtered_data.to_pickle('filtered__Data.pkl')
-    # a_1, f_1, e_1, fft_data_1 = signalToNoiseRation(filtered_data, key, colorlist)
-    # plt.show()
-    #peak detection
-    Peaks = Peak_detection(filtered_data, key, colorlist)
-    # plt.show()
-    hr = HR_estimation(filtered_data, Peaks)
-    print(hr)
+    # a, f, e, fft_data = signalToNoiseRation(baseline_corrected, key, colorlist)
+    #
+    # # Filter requirements.
+    # fs = [50, 100, 200, 200, 130]  # sample rate, Hz
+    # order = 2  # sin wave can be approx represented as quadratic
+    # filtered_data = fft_data
+    # for index in range(len(key)):
+    #     channel = fft_data[key[index]].columns[1:]
+    #     for c in range(len(channel)):
+    #         cutoff = f[index][c][1]  # desired cutoff frequency of the filter, Hz, slightly higher than actual 2 Hz
+    #         filtered_data.loc[:, (key[index], channel[c])] = butter_lowpass_filter(
+    #             fft_data.loc[:, (key[index], channel[c])], cutoff, fs[index], order)
+    # plotTimeSeries(filtered_data, key, colorlist, "filtered \n data")
+    # # plt.show()
+    # filtered_data.to_pickle('filtered__Data.pkl')
+    # # a_1, f_1, e_1, fft_data_1 = signalToNoiseRation(filtered_data, key, colorlist)
+    # # plt.show()
+    # #peak detection
+    # Peaks = Peak_detection(filtered_data, key, colorlist)
+    # # plt.show()
+    # hr = HR_estimation(filtered_data, Peaks)
+    # print(hr)
 
 

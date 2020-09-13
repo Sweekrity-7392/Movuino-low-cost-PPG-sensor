@@ -3,22 +3,23 @@ import pandas as pd
 from pathlib import Path as Path
 
 main_dir = Path('C:/Users/dell/Desktop/Project-1/data')
-file_index = ['example.csv', 'example.csv', 'example.csv', 'example.csv']
+file_index = ['Final_validation - 200hz_top_allchannels.csv', 'Final_validation - 200hz_allchannels.csv',
+              'Final_validation - polarOH1_R.csv', 'polaroh1-bottom.csv']
 # file_path = main_dir/file_index[1]
 
 def extract_data(main_dir, file_index):
     df_list = []
-    for i in range(0, 4):
+    for i in range(0, len(file_index)):
         df = pd.DataFrame()
         df_list.append(df)
     for i in range(0, len(file_index)):
         file_path = main_dir/file_index[i]
         df_1 = pd.read_csv(file_path, ',', header=0)
         df_list[i] = df.append(df_1)
-    df = pd.concat([df_list[0], df_list[1], df_list[2], df_list[3]], axis=1, keys=['Movuino', 'PolarOH1',
-                                                                               'PolarH10', 'Maxim'])
+    df = pd.concat([df_list[0], df_list[1], df_list[2], df_list[3]], axis=1, keys=['top_movuino', 'bottom_movuino',
+                                                                       'top-polarOh1','bottom-polarOH1'])
     return df
 if __name__ == "__main__":
     data = extract_data(main_dir, file_index)
-    # print(data)
-    data.to_pickle('data.pkl')
+    print(data.columns)
+    data.to_pickle('topVsBottom_data.pkl')

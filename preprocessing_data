@@ -12,16 +12,19 @@ def plotTimeSeries(data, key:list, colorlist:list, label:str):
     """
     for index in key:
         fig = plt.figure(figsize=[10, 4])
-        gs = fig.add_gridspec(3, 1)
+        fig.suptitle(index)
         channel = data[index].columns[1:]
+        gs = fig.add_gridspec(len(channel), 1)
         for c in range(len(channel)):
             ax = fig.add_subplot(gs[c, 0])
-            ax.plot(data[index, 'timestamp'], data[index, channel[c]], color=colorlist[c])
-            ax.set_ylabel('%s \n %s' %(label,channel[c]))
-            ax.set_xticks([])
-        ax.set_xticks(data[index, 'timestamp'])
-        labels = ax.get_xticklabels()
-        plt.setp(labels, rotation=45, horizontalalignment='right')
+            data[index, 'timestamp'] = data[index, 'timestamp'].dropna()
+            data[index, channel[c]] = data[index, channel[c]].dropna()
+            ax.plot(data[index, 'timestamp'][:510], data[index, channel[c]][:510], color=colorlist[c])
+            ax.set_ylabel('%s \n %s' %(label, channel[c]))
+            # ax.set_xticks([])
+        # ax.set_xticks(data[index, 'timestamp'])
+        # labels = ax.get_xticklabels()
+        # plt.setp(labels, rotation=45, horizontalalignment='right')
         ax.set_xlabel('Time points (ms)')
 
 def scaleAndMeanShift(data, key:list, colorlist:list):
@@ -58,16 +61,19 @@ def removeBaseline(data,key,colorlist):
             # baseline_coeff_index.append(ratio)
 
             # baseline correction
-            baseline_corrected_data.loc[:, (index, channel[c])] = data.loc[:, (index, channel[c])] - (ratio * data.loc[:, (index, channel[c])])
+            baseline_corrected_data.loc[:, (index, channel[c])] = data.loc[:, (index, channel[c])] - \
+                                                                  (ratio * data.loc[:, (index, channel[c])])
     plotTimeSeries(baseline_corrected_data, key, colorlist, "Baseline \n shifted \n Data")
     baseline_corrected_data.to_pickle("baseline_corrected_data.pkl")
     return baseline_corrected_data
 
 if __name__ == "__main__":
     # key = ['Movuino', 'PolarOH1', 'PolarH10', 'Maxim']
-    key = ['Movuino',"PolarOH1"]
-    colorlist = ['r', 'c', 'g']
-    data = pd.read_pickle('data.pkl')
+    # key = ['50Hz', '100Hz', '200Hz', 'polarH10', 'polarOH1']
+    # key = ['3f', '2f', '4f']
+    key = ['top_movuino', 'bottom_movuino', 'top-polarOh1', 'bottom_polarOH1']
+    colorlist = ['r', 'g', 'c']
+    data = pd.read_pickle('intensity_data.pkl')
     # print(data.loc[:, ('Movuino','timestamp')])
     # print(data.loc[1, (key[0], 'timestamp')])
     for index in key:
@@ -75,8 +81,8 @@ if __name__ == "__main__":
         for i in range(len(data.loc[:, (index, 'timestamp')])):
             data.loc[i, (index, 'timestamp')] = data.loc[i, (index, 'timestamp')] - initial
             # data.loc[i, (index, 'timestamp')] = pd.to_datetime(data.loc[i, (index, 'timestamp')]0.5 unit='ms')
-    plotTimeSeries(data, key, colorlist,"Raw Data")
-    data_scaled = scaleAndMeanShift(data, key, colorlist)
-    baseline_shifted = removeBaseline(data_scaled, key, colorlist)
+    plotTimeSeries(data, key, colorlist, "Raw Data")
+    # data_scaled = scaleAndMeanShift(data, key, colorlist)
+    # baseline_shifted = removeBaseline(data_scaled, key, colorlist)
     # print(baseline_shifted.Movuino)
     plt.show()
