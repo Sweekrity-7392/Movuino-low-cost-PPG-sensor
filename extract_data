@@ -3,9 +3,8 @@ import pandas as pd
 from pathlib import Path as Path
 
 main_dir = Path('C:/Users/dell/Desktop/Project-1/data')
-file_index = ['Final_validation - 200hz_top_allchannels.csv', 'Final_validation - 200hz_allchannels.csv',
-              'Final_validation - polarOH1_R.csv', 'polaroh1-bottom.csv']
-# file_path = main_dir/file_index[1]
+file_index = ['100hz_R_1.csv', '100hz_R_2.csv', '100hz_R_3.csv', '100hz_R_4.csv', '100hz_R_5.csv']
+# file_path = main_dir/file_index[1].csv
 
 def extract_data(main_dir, file_index):
     df_list = []
@@ -15,11 +14,11 @@ def extract_data(main_dir, file_index):
     for i in range(0, len(file_index)):
         file_path = main_dir/file_index[i]
         df_1 = pd.read_csv(file_path, ',', header=0)
-        df_list[i] = df.append(df_1)
-    df = pd.concat([df_list[0], df_list[1], df_list[2], df_list[3]], axis=1, keys=['top_movuino', 'bottom_movuino',
-                                                                       'top-polarOh1','bottom-polarOH1'])
+        df_list[i] = df.append(df_1[:-2])
+    df = pd.concat([df_list[0], df_list[1], df_list[2], df_list[3], df_list[4]], axis=1, keys=['rep1', 'rep2', 'rep3',
+                                                                                               'rep4', 'rep5'])
     return df
 if __name__ == "__main__":
     data = extract_data(main_dir, file_index)
     print(data.columns)
-    data.to_pickle('topVsBottom_data.pkl')
+    data.to_pickle('Rest_movuino.pkl')

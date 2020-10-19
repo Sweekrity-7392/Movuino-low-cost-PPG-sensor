@@ -15,11 +15,11 @@ def plotTimeSeries(data, key:list, colorlist:list, label:str):
         fig.suptitle(index)
         channel = data[index].columns[1:]
         gs = fig.add_gridspec(len(channel), 1)
+        # time = data[index, 'timestamp']
         for c in range(len(channel)):
             ax = fig.add_subplot(gs[c, 0])
-            data[index, 'timestamp'] = data[index, 'timestamp'].dropna()
-            data[index, channel[c]] = data[index, channel[c]].dropna()
-            ax.plot(data[index, 'timestamp'][:510], data[index, channel[c]][:510], color=colorlist[c])
+            # ppg = data[index, channel[c]].dropna()
+            ax.plot(data[index, channel[c]][150:-150], color=colorlist[c])
             ax.set_ylabel('%s \n %s' %(label, channel[c]))
             # ax.set_xticks([])
         # ax.set_xticks(data[index, 'timestamp'])
@@ -38,7 +38,7 @@ def scaleAndMeanShift(data, key:list, colorlist:list):
         channel = data[index].columns[1:]
         for c in range(len(channel)):
             data_scaled[index, channel[c]] = preprocessing.scale(data[index, channel[c]])
-    plotTimeSeries(data_scaled,key,colorlist,"Normalized \n Data")
+    # plotTimeSeries(data_scaled, key, colorlist, "Normalized \n Data")
     return data_scaled
 
 def removeBaseline(data,key,colorlist):
@@ -47,6 +47,7 @@ def removeBaseline(data,key,colorlist):
     baseline_corrected_data = data
     for index in key:
         channel = data[index].columns[1:]
+        # data[index, 'timestamp'] = data[index, 'timestamp'].dropna()
         time_square = data.loc[:, (index, 'timestamp')] ** 2
         # print(time_square)
         cumulative_time_square = np.sum(time_square)
@@ -71,18 +72,23 @@ if __name__ == "__main__":
     # key = ['Movuino', 'PolarOH1', 'PolarH10', 'Maxim']
     # key = ['50Hz', '100Hz', '200Hz', 'polarH10', 'polarOH1']
     # key = ['3f', '2f', '4f']
-    key = ['top_movuino', 'bottom_movuino', 'top-polarOh1', 'bottom_polarOH1']
+    # key = ['top_movuino', 'bottom_movuino', 'top-polarOh1', 'bottom-polarOH1']
+    key = ['rep1', 'rep2', 'rep3', 'rep4', 'rep5']
     colorlist = ['r', 'g', 'c']
-    data = pd.read_pickle('intensity_data.pkl')
+    data = pd.read_pickle('Rest_movuino.pkl')
+    data = data.dropna()
+    # print(data['rep1','red'])
+    # print(data['rep1', 'timestamp'])
     # print(data.loc[:, ('Movuino','timestamp')])
     # print(data.loc[1, (key[0], 'timestamp')])
     for index in key:
-        initial = data.loc[0, (index, 'timestamp')]
+        initial = int(data.loc[0, (index, 'timestamp')])
         for i in range(len(data.loc[:, (index, 'timestamp')])):
-            data.loc[i, (index, 'timestamp')] = data.loc[i, (index, 'timestamp')] - initial
-            # data.loc[i, (index, 'timestamp')] = pd.to_datetime(data.loc[i, (index, 'timestamp')]0.5 unit='ms')
-    plotTimeSeries(data, key, colorlist, "Raw Data")
-    # data_scaled = scaleAndMeanShift(data, key, colorlist)
-    # baseline_shifted = removeBaseline(data_scaled, key, colorlist)
-    # print(baseline_shifted.Movuino)
-    plt.show()
+            data.loc[i, (index, 'timestamp')] = int(data.loc[i, (index, 'timestamp')]) - initial
+    #         # data.loc[i, (index, 'timestamp')] = pd.to_datetime(data.loc[i, (index, 'timestamp')]0.5 unit='ms')
+    # plotTimeSeries(data, key, colorlist, "Rest Data")
+    data_scaled = scaleAndMeanShift(data, key, colorlist)
+    # data_scaled.to_pickle('Rest_movuino_scaled.pkl')
+    baseline_shifted = removeBaseline(data_scaled, key, colorlist)
+    baseline_shifted.to_pickle('Rest_movuino_normalized.pkl')
+    # plt.show()
